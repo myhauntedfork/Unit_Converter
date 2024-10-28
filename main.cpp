@@ -1,77 +1,114 @@
 #include <iostream>
+#include <unordered_map>
 #include <string>
 #include <iomanip>
 
+using namespace std;
 
-double lengthConverter(double value, std::string fromUnit, std::string toUnit) {
-    if (fromUnit == "km") value *= 1000;
-    else if (fromUnit == "ft") value /= 3.281;
-    else if (fromUnit == "mi") value *= 1609.34;
+unordered_map<string, double> lengthConversionFactors;
 
-    if (toUnit == "km") return value / 1000;
-    else if (toUnit == "ft") return value * 3.281;
-    else if (toUnit == "mi") return value / 1609.34;
-    else return value;
+void initializeLengthConversionFactors() {
+    lengthConversionFactors["m"] = 1.0;
+    lengthConversionFactors["km"] = 1000.0;
+    lengthConversionFactors["cm"] = 0.01;
+    lengthConversionFactors["mm"] = 0.001;
+    lengthConversionFactors["mi"] = 1609.34;
+    lengthConversionFactors["yd"] = 0.9144;
+    lengthConversionFactors["ft"] = 0.3048;
+    lengthConversionFactors["in"] = 0.0254;
 }
 
-double temperatureConverter(double value, std::string fromUnit, std::string toUnit) {
-    if (fromUnit == "C" && toUnit == "F") return (value * 9/5) + 32;
-    else if (fromUnit == "C" && toUnit == "K") return value + 273.15;
-    else if (fromUnit == "F" && toUnit == "C") return (value - 32) * 5/9;
-    else if (fromUnit == "F" && toUnit == "K") return (value - 32) * 5/9 + 273.15;
-    else if (fromUnit == "K" && toUnit == "C") return value - 273.15;
-    else if (fromUnit == "K" && toUnit == "F") return (value - 273.15) * 9/5 + 32;
-    else return value;
+double convertLength(double value, const string &fromUnit, const string &toUnit) {
+    double valueInMeters = value * lengthConversionFactors[fromUnit];
+    return valueInMeters / lengthConversionFactors[toUnit];
 }
 
-void convertLength() {
-    std::string fromUnit, toUnit;
-    double value;
-    
-    std::cout << "Enter the value: ";
-    std::cin >> value;
-    
-    std::cout << "Choose the unit to convert from (m, km, ft, mi): ";
-    std::cin >> fromUnit;
-    std::cout << "Choose the unit to convert to (m, km, ft, mi): ";
-    std::cin >> toUnit;
-    
-    double result = lengthConverter(value, fromUnit, toUnit);
-    std::cout << "Converted value: " << std::fixed << std::setprecision(2) << result << " " << toUnit << std::endl;
-}
+double convertTemperature(double value, const string &fromUnit, const string &toUnit) {
+    double valueInCelsius;
 
-void convertTemperature() {
-    std::string fromUnit, toUnit;
-    double value;
-    
-    std::cout << "Enter the temperature: ";
-    std::cin >> value;
-    
-    std::cout << "Choose the unit to convert from (C, F, K): ";
-    std::cin >> fromUnit;
-    std::cout << "Choose the unit to convert to (C, F, K): ";
-    std::cin >> toUnit;
-    
-    double result = temperatureConverter(value, fromUnit, toUnit);
-    std::cout << "Converted temperature: " << std::fixed << std::setprecision(2) << result << " " << toUnit << std::endl;
+    if (fromUnit == "C") {
+        valueInCelsius = value;
+    } else if (fromUnit == "F") {
+        valueInCelsius = (value - 32) * 5.0 / 9.0;
+    } else if (fromUnit == "K") {
+        valueInCelsius = value - 273.15;
+    } else {
+        throw invalid_argument("Unsupported temperature unit");
+    }
+
+    if (toUnit == "C") {
+        return valueInCelsius;
+    } else if (toUnit == "F") {
+        return valueInCelsius * 9.0 / 5.0 + 32;
+    } else if (toUnit == "K") {
+        return valueInCelsius + 273.15;
+    } else {
+        throw invalid_argument("Unsupported temperature unit");
+    }
 }
 
 int main() {
+    initializeLengthConversionFactors();
+
+    cout << "Unit Converter - Length and Temperature\n";
+    cout << "Supported length units: meters (m), kilometers (km), centimeters (cm),\n";
+    cout << "millimeters (mm), miles (mi), yards (yd), feet (ft), inches (in)\n";
+    cout << "Supported temperature units: Celsius (C), Fahrenheit (F), Kelvin (K)\n";
+    
     int choice;
-    std::cout << "Welcome to the Unit Converter!" << std::endl;
-    std::cout << "Select a type of conversion:\n";
-    std::cout << "1. Length\n";
-    std::cout << "2. Temperature\n";
-    std::cout << "Enter your choice (1 or 2): ";
-    std::cin >> choice;
-    
+    cout << "\nSelect conversion type:\n1. Length\n2. Temperature\n";
+    cin >> choice;
+
     if (choice == 1) {
-        convertLength();
+        double value;
+        string fromUnit, toUnit;
+
+        cout << "\nEnter the value to convert: ";
+        cin >> value;
+        
+        cout << "Enter the unit to convert from (e.g., m, km, cm, mm, mi, yd, ft, in): ";
+        cin >> fromUnit;
+        
+        cout << "Enter the unit to convert to (e.g., m, km, cm, mm, mi, yd, ft, in): ";
+        cin >> toUnit;
+
+        if (lengthConversionFactors.find(fromUnit) == lengthConversionFactors.end() ||
+            lengthConversionFactors.find(toUnit) == lengthConversionFactors.end()) {
+            cout << "Unsupported unit entered. Please use one of the listed units.\n";
+            return 1;
+        }
+
+        double convertedValue = convertLength(value, fromUnit, toUnit);
+
+        cout << fixed << setprecision(4);
+        cout << value << " " << fromUnit << " is equal to " << convertedValue << " " << toUnit << "\n";
+
     } else if (choice == 2) {
-        convertTemperature();
+        double value;
+        string fromUnit, toUnit;
+
+        cout << "\nEnter the temperature to convert: ";
+        cin >> value;
+        
+        cout << "Enter the unit to convert from (C, F, K): ";
+        cin >> fromUnit;
+        
+        cout << "Enter the unit to convert to (C, F, K): ";
+        cin >> toUnit;
+
+        try {
+            double convertedValue = convertTemperature(value, fromUnit, toUnit);
+            cout << fixed << setprecision(4);
+            cout << value << " " << fromUnit << " is equal to " << convertedValue << " " << toUnit << "\n";
+        } catch (const invalid_argument &e) {
+            cout << e.what() << "\n";
+            return 1;
+        }
+
     } else {
-        std::cout << "Invalid choice, please run the program again." << std::endl;
+        cout << "Invalid choice. Please select 1 or 2.\n";
+        return 1;
     }
-    
+
     return 0;
 }
